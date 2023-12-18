@@ -8,11 +8,13 @@ import (
 	"os"
 )
 
+// FileIO - интерфейс для операций ввода/вывода с файлами
 type FileIO interface {
 	ReadFile(filename string) ([]byte, error)
 	WriteFile(filename string, data []byte, perm os.FileMode) error
 }
 
+// realFileIO - реализация интерфейса FileIO, использующая стандартный пакет ioutil
 type realFileIO struct{}
 
 func (r *realFileIO) ReadFile(filename string) ([]byte, error) {
@@ -23,15 +25,15 @@ func (r *realFileIO) WriteFile(filename string, data []byte, perm os.FileMode) e
 	return ioutil.WriteFile(filename, data, perm)
 }
 
-var inputFile = flag.String("i", "", "Input file")
-var outputFile = flag.String("o", "", "Output file")
+var inputFile = flag.String("i", "", "Input file")   // Флаг для входного файла
+var outputFile = flag.String("o", "", "Output file") // Флаг для выходного файла
 
 var fileIO FileIO
 
 func main() {
-	fileIO = &realFileIO{}
+	fileIO = &realFileIO{} // Инициализация объекта, реализующего интерфейс FileIO
 
-	flag.Parse()
+	flag.Parse() // Обработка флагов командной строки
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: encoder64 [encode|decode] -i <inputfile> -o <outputfile>")
@@ -59,6 +61,7 @@ func main() {
 	}
 }
 
+// handleCommand обрабатывает команду encode или decode
 func handleCommand(command, inputFile, outputFile string) {
 	switch command {
 	case "encode":
@@ -77,6 +80,7 @@ func handleCommand(command, inputFile, outputFile string) {
 	}
 }
 
+// encodeFile кодирует содержимое входного файла и сохраняет результат в выходной файл
 func encodeFile(inputFile, outputFile string) {
 	data, err := fileIO.ReadFile(inputFile)
 	if err != nil {
@@ -99,6 +103,7 @@ func encodeFile(inputFile, outputFile string) {
 	fmt.Printf("File %s encoded and saved to %s\n", inputFile, outputFile)
 }
 
+// decodeFile декодирует содержимое входного файла и сохраняет результат в выходной файл
 func decodeFile(inputFile, outputFile string) {
 	data, err := fileIO.ReadFile(inputFile)
 	if err != nil {

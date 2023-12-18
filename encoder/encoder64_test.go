@@ -6,11 +6,13 @@ import (
 	"testing"
 )
 
+// mockFileIO представляет собой макет реализации интерфейса FileIO для тестирования
 type mockFileIO struct {
 	readFileFunc  func(filename string) ([]byte, error)
 	writeFileFunc func(filename string, data []byte, perm os.FileMode) error
 }
 
+// ReadFile имитирует чтение файла
 func (m *mockFileIO) ReadFile(filename string) ([]byte, error) {
 	if m.readFileFunc != nil {
 		return m.readFileFunc(filename)
@@ -18,6 +20,7 @@ func (m *mockFileIO) ReadFile(filename string) ([]byte, error) {
 	return nil, nil
 }
 
+// WriteFile имитирует запись в файл
 func (m *mockFileIO) WriteFile(filename string, data []byte, perm os.FileMode) error {
 	if m.writeFileFunc != nil {
 		return m.writeFileFunc(filename, data, perm)
@@ -25,6 +28,7 @@ func (m *mockFileIO) WriteFile(filename string, data []byte, perm os.FileMode) e
 	return nil
 }
 
+// TestEncodeFile проверяет функцию encodeFile
 func TestEncodeFile(t *testing.T) {
 	mock := &mockFileIO{
 		readFileFunc: func(filename string) ([]byte, error) {
@@ -45,6 +49,7 @@ func TestEncodeFile(t *testing.T) {
 	encodeFile("input.txt", "output.txt")
 }
 
+// TestDecodeFile проверяет функцию decodeFile
 func TestDecodeFile(t *testing.T) {
 	mock := &mockFileIO{
 		readFileFunc: func(filename string) ([]byte, error) {
