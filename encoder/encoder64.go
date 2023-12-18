@@ -8,12 +8,30 @@ import (
 	"os"
 )
 
-func main() {
-	encodeCmd := flag.NewFlagSet("encode", flag.ExitOnError)
-	decodeCmd := flag.NewFlagSet("decode", flag.ExitOnError)
+type FileIO interface {
+	ReadFile(filename string) ([]byte, error)
+	WriteFile(filename string, data []byte, perm os.FileMode) error
+}
 
-	inputFile := flag.String("i", "", "Input file")
-	outputFile := flag.String("o", "", "Output file")
+type realFileIO struct{}
+
+func (r *realFileIO) ReadFile(filename string) ([]byte, error) {
+	return ioutil.ReadFile(filename)
+}
+
+func (r *realFileIO) WriteFile(filename string, data []byte, perm os.FileMode) error {
+	return ioutil.WriteFile(filename, data, perm)
+}
+
+var inputFile = flag.String("i", "", "Input file")
+var outputFile = flag.String("o", "", "Output file")
+
+var fileIO FileIO
+
+func main() {
+	fileIO = &realFileIO{}
+
+	flag.Parse()
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: encoder64 [encode|decode] -i <inputfile> -o <outputfile>")
@@ -22,30 +40,18 @@ func main() {
 
 	switch os.Args[1] {
 	case "encode":
-		encodeCmd.StringVar(inputFile, "i", "", "Input file")
-		encodeCmd.StringVar(outputFile, "o", "", "Output file")
-		err := encodeCmd.Parse(os.Args[2:])
+		err := flag.CommandLine.Parse(os.Args[2:])
 		if err != nil {
 			return
 		}
-		if *inputFile == "" {
-			fmt.Println("Input file is required for encoding.")
-			os.Exit(1)
-		}
-		encodeFile(*inputFile, *outputFile)
+		handleCommand("encode", *inputFile, *outputFile)
 
 	case "decode":
-		decodeCmd.StringVar(inputFile, "i", "", "Input file")
-		decodeCmd.StringVar(outputFile, "o", "", "Output file")
-		err := decodeCmd.Parse(os.Args[2:])
+		err := flag.CommandLine.Parse(os.Args[2:])
 		if err != nil {
 			return
 		}
-		if *inputFile == "" {
-			fmt.Println("Input file is required for decoding.")
-			os.Exit(1)
-		}
-		decodeFile(*inputFile, *outputFile)
+		handleCommand("decode", *inputFile, *outputFile)
 
 	default:
 		fmt.Println("Usage: encoder64 [encode|decode] -i <inputfile> -o <outputfile>")
@@ -53,8 +59,26 @@ func main() {
 	}
 }
 
+func handleCommand(command, inputFile, outputFile string) {
+	switch command {
+	case "encode":
+		if inputFile == "" {
+			fmt.Println("Input file is required for encoding.")
+			os.Exit(1)
+		}
+		encodeFile(inputFile, outputFile)
+
+	case "decode":
+		if inputFile == "" {
+			fmt.Println("Input file is required for decoding.")
+			os.Exit(1)
+		}
+		decodeFile(inputFile, outputFile)
+	}
+}
+
 func encodeFile(inputFile, outputFile string) {
-	data, err := ioutil.ReadFile(inputFile)
+	data, err := fileIO.ReadFile(inputFile)
 	if err != nil {
 		fmt.Println("Error reading input file:", err)
 		os.Exit(1)
@@ -66,7 +90,7 @@ func encodeFile(inputFile, outputFile string) {
 		outputFile = inputFile + ".out"
 	}
 
-	err = ioutil.WriteFile(outputFile, []byte(encodedData), 0644)
+	err = fileIO.WriteFile(outputFile, []byte(encodedData), 0644)
 	if err != nil {
 		fmt.Println("Error writing to output file:", err)
 		os.Exit(1)
@@ -76,7 +100,7 @@ func encodeFile(inputFile, outputFile string) {
 }
 
 func decodeFile(inputFile, outputFile string) {
-	data, err := ioutil.ReadFile(inputFile)
+	data, err := fileIO.ReadFile(inputFile)
 	if err != nil {
 		fmt.Println("Error reading input file:", err)
 		os.Exit(1)
@@ -92,7 +116,7 @@ func decodeFile(inputFile, outputFile string) {
 		outputFile = inputFile + ".out"
 	}
 
-	err = ioutil.WriteFile(outputFile, []byte(decodedData), 0644)
+	err = fileIO.WriteFile(outputFile, []byte(decodedData), 0644)
 	if err != nil {
 		fmt.Println("Error writing to output file:", err)
 		os.Exit(1)
