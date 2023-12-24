@@ -22,24 +22,40 @@ func main() {
 		return
 	}
 
-	visited := make(map[int]bool)
+	var startNode, endNode int
+	fmt.Print("Enter start node: ")
+	fmt.Scan(&startNode)
+	fmt.Print("Enter end node: ")
+	fmt.Scan(&endNode)
 
-	fmt.Println("DFS traversal:")
-	for _, node := range graph.Nodes {
-		if !visited[node.ID] {
-			dfs(graph, node.ID, visited)
-		}
-	}
+	fmt.Printf("Path from %d to %d:\n", startNode, endNode)
+	path := findPath(graph, startNode, endNode)
+	fmt.Println(path)
 }
 
-func dfs(graph Graph, currentNode int, visited map[int]bool) {
+func findPath(graph Graph, startNode, endNode int) []int {
+	visited := make(map[int]bool)
+	var path []int
+	dfsWithPath(graph, startNode, endNode, visited, &path)
+	return path
+}
+
+func dfsWithPath(graph Graph, currentNode, endNode int, visited map[int]bool, path *[]int) {
 	visited[currentNode] = true
-	fmt.Println(currentNode)
+	*path = append(*path, currentNode)
+
+	if currentNode == endNode {
+		return
+	}
 
 	for _, neighborID := range graph.Nodes[currentNode-1].Neighbors {
 		if !visited[neighborID] {
-			dfs(graph, neighborID, visited)
+			dfsWithPath(graph, neighborID, endNode, visited, path)
 		}
+	}
+
+	if (*path)[len(*path)-1] != endNode {
+		*path = (*path)[:len(*path)-1]
 	}
 }
 
